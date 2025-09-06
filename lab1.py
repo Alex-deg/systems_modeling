@@ -1,7 +1,7 @@
 from math import e, cos, sin
 import time
-import os
 import matplotlib.pyplot as plt
+from functions import get_valid_input, additional_test
 
 c = 6000
 u = 50 
@@ -16,7 +16,6 @@ def print_graphics(dict, title, x_label, y_label):
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    #plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
 
@@ -36,8 +35,9 @@ def solver(h):
         i += h
     return [x1, x2, x3]
 
+
 def check_char(char):
-    if len(char) > 1:\
+    if len(char) > 1:
         raise ValueError(f"Длина символа = {len(char)}, а должна быть равна 1")
     if not (ord(char) == 110 or ord(char) == 121):
         raise ValueError('Символ не входит в множество ответов {y, n}')
@@ -51,33 +51,6 @@ def check_step(message):
         raise ValueError(f"Значение шага не обоснованно малое\nПри введенном значении объем занимаемой оперативной памяти = {((T/h) * 3 * 4) / (1024*1024*1024)} Гб")
     return True
 
-def additional_test(array, message):
-    for el in array:
-        flag = el(message)
-        if not flag:
-            return False
-    return True
-
-def get_valid_input(type, message, arr_of_checking_functions = []):
-    while True:
-        try:
-            if type == 'float' and additional_test(arr_of_checking_functions, message):
-                return float(message)
-            elif type == 'int' and additional_test(arr_of_checking_functions, message):
-                return int(message)
-            elif type == 'char' and additional_test(arr_of_checking_functions, message):
-                return message
-        except ValueError as err:
-            if os.name == 'nt':
-                os.system('cls')
-            elif os.name == 'posix':
-                os.system('clear')
-            if len(str(err)) > 0:
-                print(str(err))
-            else:
-                print(f"Неверный ввод! Введенное выражение не соответствует типу {type} или не прошло проверку")
-            print('Введите значение заново:')
-            message = input()
 
 
 if __name__ == "__main__":
