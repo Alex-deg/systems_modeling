@@ -1,8 +1,13 @@
 from math import e, cos, sin
 import time
-
+import os
 import matplotlib.pyplot as plt
 
+c = 6000
+u = 50 
+T = 10
+h_tv = 8590
+g = 9.81
 
 def print_graphics(dict, title, x_label, y_label):
 
@@ -17,12 +22,6 @@ def print_graphics(dict, title, x_label, y_label):
 
 def solver(h):
 
-    c = 6000
-    u = 50 
-    T = 10
-    h_tv = 8590
-    g = 9.81
-
     x1 = {0: 100}
     x2 = {0: 0}
     x3 = {0: 1200}
@@ -30,42 +29,54 @@ def solver(h):
     i = h
 
     while (i <= T):
-        r = 0.1 * e ** (-x1[i - h] / h_tv)
-        x1[i] = x1[i - h] + x2[i - h] * h
-        x2[i] = x2[i - h] + (c*u/x3[i - h] - g - r*x2[i - h]*x2[i - h]/x3[i - h]) * h
-        x3[i] = x3[i - h] - u * h
+        r = 0.1 * e ** (-x1[round(i - h,10)] / h_tv)
+        x1[round(i,10)] = x1[round(i - h,10)] + x2[round(i - h,10)] * h
+        x2[round(i,10)] = x2[round(i - h,10)] + (c*u/x3[round(i - h,10)] - g - r*x2[round(i - h,10)]*x2[round(i - h,10)]/x3[round(i - h,10)]) * h
+        x3[round(i,10)] = x3[round(i - h,10)] - u * h
         i += h
-    
     return [x1, x2, x3]
 
 def check_char(char):
-    if len(char) > 1:
-        return False
+    if len(char) > 1:\
+        raise ValueError(f"Длина символа = {len(char)}, а должна быть равна 1")
     if not (ord(char) == 110 or ord(char) == 121):
-        return False
+        raise ValueError('Символ не входит в множество ответов {y, n}')
+    return True
+
+def check_step(message):
+    h = float(message)
+    if h >= T:
+        raise ValueError(f"Введенное значение h = {h} больше или равно интервалу интегрирования T = {T}")
+    if h - 0.000001 < 0:
+        raise ValueError(f"Значение шага не обоснованно малое\nПри введенном значении объем занимаемой оперативной памяти = {((T/h) * 3 * 4) / (1024*1024*1024)} Гб")
+    return True
+
+def additional_test(array, message):
+    for el in array:
+        flag = el(message)
+        if not flag:
+            return False
     return True
 
 def get_valid_input(type, message, arr_of_checking_functions = []):
     while True:
-        flag = False
         try:
-            for el in arr_of_checking_functions:
-                flag = el(message)
-                if not flag:
-                    break
-            if flag:
-                if type == 'float':
-                    return float(message)
-                elif type == 'int':
-                    return int(message)
-                elif type == 'char':
-                    return message
-        except ValueError:
-            if flag:
-                print(f"Неверный ввод! Введенное выражение не соответствует типу {type}")
-            elif not flag:
-                print('Введенное сообщение не прошло проверку')
-            print('Введите заново:')
+            if type == 'float' and additional_test(arr_of_checking_functions, message):
+                return float(message)
+            elif type == 'int' and additional_test(arr_of_checking_functions, message):
+                return int(message)
+            elif type == 'char' and additional_test(arr_of_checking_functions, message):
+                return message
+        except ValueError as err:
+            if os.name == 'nt':
+                os.system('cls')
+            elif os.name == 'posix':
+                os.system('clear')
+            if len(str(err)) > 0:
+                print(str(err))
+            else:
+                print(f"Неверный ввод! Введенное выражение не соответствует типу {type} или не прошло проверку")
+            print('Введите значение заново:')
             message = input()
 
 
@@ -75,8 +86,8 @@ if __name__ == "__main__":
     productivity_by_accuracy = {}
 
     print('Введите шаг интегрирования')
-    h = float(input())
-    get_valid_input('float', h)
+    h = input()
+    h = get_valid_input('float', h, [check_step])
 
     cur_value = 0
     prev_value = 0
@@ -98,12 +109,12 @@ if __name__ == "__main__":
 
         productivity_by_accuracy[h] = error
 
-        print(cur_value)
-        print(error)
+        print(f"x1[T] = {cur_value}")
+        print(f"Относительная погрешность = {error}")
 
         print('Вывести графики? y/n')
         graph_choise = input()
-        get_valid_input('char', graph_choise, [check_char])
+        graph_choise = get_valid_input('char', graph_choise, [check_char])
         if graph_choise == 'y':
             for i in range(len(list_of_values)):
                 print_graphics(list_of_values[i], f"График x{i + 1}", 'T, c', f"x{i + 1}")
@@ -119,7 +130,5 @@ if __name__ == "__main__":
     for i in range(len(values_at_the_reference_step)):
         print_graphics(values_at_the_reference_step[i], f"График x{i + 1} при оптимальном шаге", 'T, c', f"x{i + 1}")
 
-    print(productivity_by_accuracy)
-    print(productivity_by_time)
     print_graphics(productivity_by_time, 'Трудоемкость от h', 'h', 'Время выполнения программы, мс')
     print_graphics(productivity_by_accuracy, 'Точность от h', 'h', 'Погрешность, %')
